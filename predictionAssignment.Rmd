@@ -82,17 +82,23 @@ netColNames <- intersect(modelColNames,testNonNaColNames)
 trainingMSNew <- trainingMS[,netColNames]
 trainingMSNew$classe <- trainingMS$classe
 ```
-Random forest technique is used for the model fit with preprocessing done using pca and boxcox.
+Random forest technique is used for the model fit with preprocessing done using pca and boxcox. The training sample originally obtained is split into training and test set.
+
 ##Modelling
 ```{r cache=TRUE}
-modelfit <- train(classe ~ ., data = trainingMSNew, method = "rf",    preProcess = c("pca", "BoxCox"), trControl = trainControl(method = "cv"))
+inTrain <- createDataPartition(y=trainingMSNew$classe,p=0.75,list=FALSE)
+trainMS <- trainingMSNew[inTrain,]
+testMS <- trainingMSNew[-inTrain,]
+modelfit <- train(classe ~ ., data = trainMS, method = "rf",    preProcess = c("pca", "BoxCox"), trControl = trainControl(method = "cv"))
 ```
 
-##Final model
+##Comparing with test
 ```{r}
-modelfit$finalModel
+pred <- predict(modelfit,testMS)
+cmatrix <- confusionMatrix(testMS$classe,pred)
+cmatrix
 ```
-The above final model also gives the error rate. The low error rate shows the model performs a good fit.
+The out of sample error rate is `r (1 - cmatrix$overall['Accuracy'])[[1]]`
 
 ##Plot accuracy v/s random predictors
 ```{r}
